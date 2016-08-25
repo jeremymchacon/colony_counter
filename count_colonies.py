@@ -15,6 +15,7 @@ from skimage import io
 from skimage import filters
 from skimage import feature
 import os
+from scipy import ndimage as ndi
 
 def round_mask(im, center, radius):
     """ sets all pixels outside a radius around the center to zero
@@ -60,7 +61,7 @@ def main(argv):
     #plt.imshow(lab[:,:,1])
     
     # filter 
-    lab1 = skimage.filters.gaussian(lab,5)
+    lab1 = ndi.gaussian_filter(lab,5)
 
     # normalize to 0-1
     lab1 = lab[:,:,1] - np.min(lab[:,:,1])
@@ -85,7 +86,7 @@ def main(argv):
     opened = skimage.morphology.binary_opening(threshed, selem = strel)
 
     #smooth smoothed, then mask with the opened image
-    smoothed = skimage.filters.gaussian(lab1,4)
+    smoothed = ndi.gaussian_filter(lab1,4)
     smoothed[~opened] = 0
     
     # find the local peaks
