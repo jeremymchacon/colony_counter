@@ -17,6 +17,12 @@ from skimage import feature
 import os
 from scipy import ndimage as ndi
 
+def show_clicks_on_image(array, locs):
+    plt.imshow(array, cmap=plt.cm.gray)
+    plt.hold(True)
+    plt.plot(locs[:, 1], locs[:, 0], 'r.')
+    plt.show()
+
 def show_image(array):
     """
     Takes an array, e.g. a 2 or 3d image from skimage, and shows it as a pygame
