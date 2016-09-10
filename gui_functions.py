@@ -17,10 +17,6 @@ from skimage import feature
 import os
 from scipy import ndimage as ndi
 
-
-file = 'bottomleft250_20150904.tif'
-cells = io.imread(file)    
-
 def show_image(array):
     """
     Takes an array, e.g. a 2 or 3d image from skimage, and shows it as a pygame
@@ -125,14 +121,6 @@ def add_locs_with_clicks(array, locs):
                 clicks.append(pos)
     
 
-#
-#file = 'bottomleft250_20150904.tif'
-#cells = io.imread(file)         
-#show_image(cells)
-#x, y = get_xy_of_click_on_image(cells) 
-#x, y = get_xy_of_clicks_on_image(cells)     
-clicks = add_locs_with_clicks(cells, [(100,100),(50,300)])
-
 def add_or_remove_locs_with_clicks(array, locs):
     """
     takes an array e.g. image, shows as pygame display, plots the locs (list of
@@ -170,8 +158,8 @@ def add_or_remove_locs_with_clicks(array, locs):
                     dists = [(xy[0]-pos[0])**2 + (xy[1]-pos[1])**2 for xy in locs]
                     dists = np.asarray(dists)
                     closest = np.where(dists == np.min(dists))[0][0]
-                    print(closest)
-                    print(locs[closest])
+                    
+                    # toss closest (if there)
                     try:
                         locs.remove(locs[closest])
                     except:
@@ -189,6 +177,5 @@ def add_or_remove_locs_with_clicks(array, locs):
 
                 screen.blit(surface, (0,0))
                 pygame.display.flip()
-clicks = add_or_remove_locs_with_clicks(cells, [(100,100),(50,300)])
                 
  
