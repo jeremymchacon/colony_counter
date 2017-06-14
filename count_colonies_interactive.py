@@ -43,6 +43,9 @@ def main(argv):
         print('             - e.g. count_colonies_interactive.py petridish.tif colorspace RGB 1')        
         print('                   - this will use the green channel from the RGB colorspace for the analysis')        
         print('             - if you are uncertain about the best colorspace, use the best_color_chooser.py program')        
+        print('         calc_dists')
+        print('             - calculates a number of distance metrics using R and the spatstat package')
+        print('             - only do this if you have those installed, and Rscript is visible by your system')
 
         return
     
@@ -54,6 +57,7 @@ def main(argv):
     show_plot = False
     color_space = "LAB"    
     color_channel = 0
+    calc_dists = False
     
     if len(argv) > 1:
         for i in range(1,len(argv)):        
@@ -62,6 +66,8 @@ def main(argv):
             if argv[i] == 'colorspace':
                 color_space = argv[i+1]
                 color_channel = int(argv[i+2])
+            if argv[i] == 'calc_dists':
+                calc_dists = True
         
 
     # read file    
@@ -208,7 +214,8 @@ def main(argv):
     
     df.to_csv('{}_results.csv'.format(file))    
     # use R to calculate Voronoi in a circle (no python package does this!)
-    subprocess.call(["Rscript","./distance_metrics_calc.R",file])
+    if calc_dists:
+        subprocess.call(["Rscript","./distance_metrics_calc.R",file])
     
 
     if show_plot:
