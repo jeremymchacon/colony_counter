@@ -1,3 +1,4 @@
+#! /usr/bin/Rscript
 # -*- coding: utf-8 -*-
 """
 Created on Wed Aug  3 21:09:17 2016
@@ -18,6 +19,7 @@ from skimage import io
 from skimage import filters
 from skimage import feature
 import os
+import subprocess
 from scipy import ndimage as ndi
 import pygame
 import pandas as pd
@@ -177,7 +179,10 @@ def main(argv):
                        'y' : y,
                        'area' : areas,
                        'eccentricity' : eccentricity,
-                       'colony' :range(len(x))})
+                       'colony' :range(len(x)),
+                       'petri_x' : circle[0],
+                       'petri_y' : circle[1],
+                       'petri_radius' : circle[2]})
     
     # plot
 
@@ -198,15 +203,16 @@ def main(argv):
     plt.savefig('{}_result_img.png'.format(file),
                 dpi = 300,
                 bbox_inches ='tight')
+      
+    
+    
+    df.to_csv('{}_results.csv'.format(file))    
+    # use R to calculate Voronoi in a circle (no python package does this!)
+    subprocess.call(["Rscript","./distance_metrics_calc.R",file])
+    
+
     if show_plot:
-        plt.show()        
-    
-    
-    #coords ] 
-    np.savetxt(sys.stdout, df, 
-               header = 'area colony eccentricity x y',
-               fmt = '%03.3f',
-               comments = '')
+        plt.show()  
 
 
     
