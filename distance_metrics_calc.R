@@ -1,5 +1,6 @@
-library(spatstat)
-
+suppressMessages(
+  library(spatstat)
+)
 get_dists = function(x1,y1,x,y){
   sqrt((x1-x)^2 + (y1-y)^2)
 }
@@ -9,7 +10,6 @@ img_file = args[1]
 text_file = paste(img_file, "_results.csv", sep = "")
 
 df = read.csv(text_file)
-print(df)
 
 x = df$x
 y = df$y
@@ -33,7 +33,8 @@ for (i in 1:length(x)){
 }
 
 pp = ppp(x,y,window = disc(centre = c(petri_x, petri_y), radius = radius))
-v = dirichletAreas(pp)
-
+suppressMessages(
+  v <- dirichletAreas(pp)
+)
 df = cbind(df, data.frame(min_dist, d1, d2, v))
 write.csv(df, text_file)
