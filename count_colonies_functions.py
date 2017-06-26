@@ -16,8 +16,58 @@ import os
 from scipy import ndimage as ndi
 import pygame
 import pandas as pd
+import math
 
 BLACK = (  0,   0,   0)
+
+def get_colony_image(orig, center = None, radius = None):
+    # this function sums a lot of abs(median-subtracted images )which puts together
+    # an image in which colonies are brighter than the background, even if they
+    # were darker originally.  It optionally masks the images with a round mask
+    # using center = (x,y) and radius = int
+    result = np.zeros(orig[:,:,0].shape)
+
+    for j in range(5):
+        if j == 0:
+            img = skimage.color.rgb2xyz(orig)
+        elif j == 1:
+            img = skimage.color.rgb2hsv(orig)
+        elif j == 2:
+            img = skimage.color.rgb2lab(orig)
+        elif j == 3:
+            img = skimage.color.rgb2hed(orig)
+        elif j == 4:
+            img = skimage.color.rgb2luv(orig)
+            
+    
+        for i in range(3):
+            H = img[:,:,i]
+            H = H - np.min(H)
+            H /= np.max(H)
+            H = ndi.gaussian_filter(H, 2)               
+            
+            if center is not None:               
+                H = round_mask(H, center, radius)
+            im_median = np.median(H[H > 0])
+            
+            H2 = np.abs(H - im_median)
+            H2 = H2 - np.min(H2)
+            H2 /= np.max(H2)
+            result += H2    
+    return(result)
+
+
+def remove_coords_past_point(x,y, center, radius):
+    # looks through the x,y coordinates, and removes any that are radius distance 
+    # from the center point
+    colonies_to_toss = []
+    for i in range(len(x)):
+        dist = get_distance(x[i],y[i],center[0],center[1])
+        if dist > radius:
+            colonies_to_toss.append(i)
+    x = [x[i] for i in range(len(x)) if i not in colonies_to_toss ]
+    y = [y[i] for i in range(len(y)) if i not in colonies_to_toss ]
+    return((x,y))
 
 
 def get_clicks(array, caption = "", window_width = 640):
@@ -247,3 +297,7 @@ def get_nonzero_otsu(im):
     flattened = flattened[flattened > 0]
     thresh = skimage.filters.threshold_otsu(flattened)
     return(thresh)
+    
+def get_distance(x1,y1,x2,y2):
+    dist = math.sqrt((x1-x2)**2 + (y1-y2)**2)
+    return(dist)
