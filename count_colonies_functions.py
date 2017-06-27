@@ -20,6 +20,80 @@ import math
 
 BLACK = (  0,   0,   0)
 
+def determine_which_blobs_have_multi_species(rp, x, y, species):
+    # this takes in a regionprops object from a labeled image, and x/y coordinates of different species, 
+    # based on
+    # the integer vector species, where different ints mean different species.
+    # it returns two things:
+    #   single_species_centers, which is a boolean vector of length x, denoting
+    #       whether that particular x/y location is in a blob containing only one species (True)
+    #        or more than one species (False)
+    #   single_species_blobs, which is a boolean vector as long as the number of 
+    #       blobs in the image, denoting whether that blob contains one species (True)
+    #       or more than one species (False)
+    single_species_centers = np.ones(len(x), dtype = bool) # false means a click that in in a blob with other species
+    single_species_blobs = np.ones(len(rp), dtype = bool) # false means a blob with >1 species
+    
+    for i in range(len(rp)):
+        curr_blob = rp[i].coords
+        n_colonies = 0
+        species_in_curr_blob = []
+        centers_in_curr_blob = []
+        for curr_coord in curr_blob:
+            for j in range(len(x)):
+                if all([y[j], x[j]] == curr_coord):
+                    n_colonies += 1
+                    species_in_curr_blob.append(species[j])
+                    centers_in_curr_blob.append(j)
+        species_in_curr_blob = list(set(species_in_curr_blob))
+        if len(species_in_curr_blob) > 1:
+            single_species_blobs[i] = False
+            single_species_centers[centers_in_curr_blob] = False   
+    return((single_species_centers, single_species_blobs))
+    
+
+def get_intensity_at_xy(img, x, y):
+    # returns a list of list of intensities at x-y locations in the grayscale image img
+    # useful, for example, to feed into a clustering algorithm
+    I = list() # stores H intensities per colony center
+    for i in range(len(x)):
+        rows = range((y[i]-1),(y[i]+2))
+        cols = range((x[i]-1),(x[i]+2))
+        all_dat = [np.mean(img[rows,cols], 0)]
+        I.append(all_dat)
+    return(I)
+    
+def make_marker_image(img, x, y, bg = -1):
+    # makes a marker image the same size as img, for use in segmentation with watershed or random walkers
+    # labels the bg as bg, -1 by default
+    coord_img = np.zeros(img.shape, dtype = bool)
+    for k in range(len(x)):
+        coord_img[y[k], x[k]] = True
+    markers = skimage.measure.label(coord_img)
+    markers[img == 0] = bg
+    return(markers)
+    
+    
+def remove_markerless_blobs(img, x, y):
+    # in the binary image img, remove blobs that don't contain an x/y (col/row) point
+    markers = make_marker_image(img, x, y, -1)
+    rw = skimage.segmentation.random_walker(img, markers)
+    return(rw > 0)
+
+def sobel_segment(colony_image, x, y):
+    # segments a gray-scale image (colony image) using the x, y locations
+    # colony_image should look different depending on species
+    markers = make_marker_image(colony_image, x, y)
+    gradient = skimage.filters.sobel(colony_image)
+    ws = skimage.morphology.watershed(gradient, markers)
+    return(ws)
+
+def random_walker_segment(colony_image, x, y):
+    # segments a binary image (colony_image) using the x, y locations
+    markers = make_marker_image(colony_image, x, y)
+    rw = skimage.segmentation.random_walker(colony_image, markers)
+    return(rw)
+
 def get_colony_image(orig, center = None, radius = None):
     # this function sums a lot of abs(median-subtracted images )which puts together
     # an image in which colonies are brighter than the background, even if they
@@ -56,6 +130,41 @@ def get_colony_image(orig, center = None, radius = None):
             result += H2    
     return(result)
 
+def get_species_image(orig, center = None, radius = None):
+    # this function sums a lot of (median-subtracted images )which puts together
+    # an image in which colonies are different than the background. 
+    # It optionally masks the images with a round mask
+    # using center = (x,y) and radius = int
+    result = np.zeros(orig[:,:,0].shape)
+
+    for j in range(5):
+        if j == 0:
+            img = skimage.color.rgb2xyz(orig)
+        elif j == 1:
+            img = skimage.color.rgb2hsv(orig)
+        elif j == 2:
+            img = skimage.color.rgb2lab(orig)
+        elif j == 3:
+            img = skimage.color.rgb2hed(orig)
+        elif j == 4:
+            img = skimage.color.rgb2luv(orig)
+            
+    
+        for i in range(3):
+            H = img[:,:,i]
+            H = H - np.min(H)
+            H /= np.max(H)
+            H = ndi.gaussian_filter(H, 2)               
+            
+            if center is not None:               
+                H = round_mask(H, center, radius)
+            im_median = np.median(H[H > 0])
+            
+            H2 = H - im_median
+            H2 = H2 - np.min(H2)
+            H2 /= np.max(H2)
+            result += H2    
+    return(result)
 
 def remove_coords_past_point(x,y, center, radius):
     # looks through the x,y coordinates, and removes any that are radius distance 
