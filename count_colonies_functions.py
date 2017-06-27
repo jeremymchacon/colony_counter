@@ -17,8 +17,14 @@ from scipy import ndimage as ndi
 import pygame
 import pandas as pd
 import math
+import random
 
 BLACK = (  0,   0,   0)
+BLUE = (0, 0, 255)
+GREEN = (0, 255, 0)
+CYAN = (0, 255, 255)
+RED = (255, 0, 0)
+
 
 def determine_which_blobs_have_multi_species(rp, x, y, species):
     # this takes in a regionprops object from a labeled image, and x/y coordinates of different species, 
@@ -216,6 +222,79 @@ def get_clicks(array, caption = "", window_width = 640):
                 pygame.display.flip()
                 #print("user clicked at {}".format(pos))
                 clicks.append(pos)
+
+def change_species(array, x, y, species, caption = "", window_width = 800):
+    """
+    takes an array e.g. image, shows as pygame display, plots the locs (list of
+    xy tuples) on it with color defined by species.  if a user clicks near a loc,
+    it changes to the next species. this continues until the user exits, at which
+    point the updated species vector is returned
+    """
+        
+    #array = orig
+    colors = [BLUE, GREEN, CYAN, RED]
+    species = np.array(species, dtype = int)
+    n_species = len(np.unique(species))
+    
+    if n_species > len(colors):
+        more_colors_needed = n_species - len(colors)
+        for i in range(more_colors_needed):
+            colors.append((random.randint(0,255), 
+                           random.randint(0,255),
+                           random.randint(0,255)))
+    elif n_species < len(colors):
+        colors = colors[0:n_species]
+       
+    surface = pygame.surfarray.make_surface(array)
+    array_size = array.shape[0:2]
+    
+    # figure out the transformtaion size and the ratio, to back-transform points
+    ratio = float(array_size[0]) / window_width
+    height = int(array_size[1] / ratio)
+    
+    surface = pygame.transform.scale(surface, (window_width, height))
+    
+    locs = [(int(y[i] / ratio), int(x[i] / ratio)) for i in range(len(x))]    
+    
+    # transform locs and draw them
+    for i,loc in enumerate(locs):
+        pygame.draw.circle(surface, colors[species[i]], loc, 5, 1)
+ 
+        
+    pygame.init()
+    pygame.display.set_caption(caption)
+    screen = pygame.display.set_mode((window_width, height)) 
+    screen.blit(surface, (0,0))
+    pygame.display.flip()
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                # see if need to fix species
+                return(species)
+            if event.type == pygame.MOUSEBUTTONUP:
+                pos = event.pos
+                    
+                # figure out closest
+                dists = [(xy[0]-pos[0])**2 + (xy[1]-pos[1])**2 for xy in locs]
+                dists = np.asarray(dists)
+                closest = np.where(dists == np.min(dists))[0][0]
+                
+                # change species
+                species[closest] += 1
+                if species[closest] >= n_species:
+                    species[closest] = 0
+
+                surface = pygame.surfarray.make_surface(array)
+                surface = pygame.transform.scale(surface, (window_width, height))
+
+                for i,loc in enumerate(locs):
+                    pygame.draw.circle(surface, colors[species[i]], loc, 5, 1)
+
+                screen.blit(surface, (0,0))
+                pygame.display.flip()
+
                 
 def add_or_remove_locs_with_clicks(array, locs, caption = "", window_width = 800):
     """

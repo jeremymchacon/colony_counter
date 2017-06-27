@@ -74,15 +74,12 @@ def main(argv):
 
     result = get_colony_image(orig, center, radius)
     result = round_mask(result, center, radius)
-    plt.imshow(result, interpolation = "none")
 
     # use result image to get a threshold and separate colony from background
     result_for_thresh = round_mask(result, center, radius*.9)
     thresh = skimage.filters.threshold_otsu(result_for_thresh[result_for_thresh > 0])
     area_image = result > thresh    
-    
-    plt.imshow(result > thresh, cmap = "binary", interpolation = "nearest")
-    
+        
 
     # to find colony peaks, search for local peaks in a image made by multiplying
     # a distance-transformed image with the result image
@@ -91,9 +88,7 @@ def main(argv):
     coords = skimage.feature.peak_local_max(distance_result, min_distance = 10)
     x = [c[1] for c in coords]
     y = [c[0] for c in coords]
-    plt.imshow(orig, interpolation = "nearest", cmap = "spectral")
-    plt.scatter(x,y)
-    
+
     # toss colonies on the petri dish border
     x, y = remove_coords_past_point(x,y, center, radius*0.9)
     coords = [[y[i], x[i]] for i in range(len(x))]
@@ -105,8 +100,7 @@ def main(argv):
     y = [c[0] for c in coords]
     x = np.array(x)
     y = np.array(y)
-    plt.imshow(orig, interpolation = "nearest", cmap = "spectral")
-    plt.scatter(x,y)
+
     
     # toss blobs lacking a click
     colony_image = remove_markerless_blobs(area_image, x, y)
@@ -130,18 +124,13 @@ def main(argv):
         gmm = sklearn.mixture.GMM(n_species).fit(I)
         species_guess = gmm.predict(I)    
     
-        # TODOhave ability to click through the species labels and change them
-    
+        # have user to click through the species labels and change them
+        species_guess = change_species(orig, x, y, species_guess, caption = "", window_width = 800)
  
-        # grab the single-species colonies and separate them
-    
-    
-        # 2. go through each blob, see if >1 x/y point lies in them
-
+        # figure out which are the single-species blobs
         single_species_centers, single_species_blobs = determine_which_blobs_have_multi_species(rp, x, y, species_guess)    
-
         
-        # make two images, on the single_species image, one the multi-species image
+        # make two images, one the single_species image, one the multi-species image
         single_species_colony_image = np.zeros(colony_image.shape)
         multi_species_colony_image = np.zeros(colony_image.shape)
         for i in range(len(single_species_blobs)):
@@ -160,19 +149,14 @@ def main(argv):
 
 
     
-    # 3. now do the single-species segmentation regardless of n_species
-    
-    markers = make_marker_image(colony_image, x, y)
-    rw = skimage.segmentation.random_walker(colony_image, markers)
-
+    # do the single-species segmentation regardless of n_species
     colony_segmentation = random_walker_segment(single_species_colony_image > 0, 
                                 x[single_species_centers],
                                 y[single_species_centers])
     colony_segmentation[colony_segmentation == -1] = 0                            
 
-    # plt.imshow(single_species_colony_image)
 
-    # 4. if there were > 1 species, put it all back together 
+    # if there were > 1 species, put it all back together 
     if n_species > 1:
         multi_species_segmentation[multi_species_segmentation > 0] = multi_species_segmentation[multi_species_segmentation > 0] + np.max(colony_segmentation)    
         colony_segmentation += multi_species_segmentation
@@ -188,7 +172,7 @@ def main(argv):
 
 
 
-    # 5. now  re-order everthing so it is in the right order to match the final
+    # re-order everthing so it is in the right order to match the final
     # regionprops measurement
     rp = skimage.measure.regionprops(colony_segmentation)
     new_order = [-1 for _ in range(len(x))]
@@ -229,13 +213,13 @@ def main(argv):
     axarr[0].axis("off")
     axarr[0].imshow(orig)
     axarr[0].hold(True)
-    axarr[0].scatter(x, y, c = 1 + np.array(species), s = 9, marker = '.')
+    axarr[0].scatter(x, y, c = 1 + np.array(species), s = 16, marker = 'o')
     for i, txt in enumerate(colony):
         axarr[0].annotate(txt, (x[i]+9, y[i]-9), color = '#FFFFFF', size = 2)
     axarr[1].axis("off")
     axarr[1].imshow(colony_segmentation)
     axarr[1].hold(True)
-    axarr[1].scatter(x, y, c = 1 + np.array(species), s = 9, marker = '.')
+    axarr[1].scatter(x, y, c = 1 + np.array(species), s = 4, marker = '.')
     for i, txt in enumerate(colony):
         axarr[1].annotate(txt, (x[i]+9, y[i]-9), color = '#FFFFFF', size = 2)
 
