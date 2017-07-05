@@ -96,7 +96,7 @@ def main(argv):
     coords = [[y[i], x[i]] for i in range(len(x))]
     
     # let the user fix the point selection
-    coords = add_or_remove_locs_with_clicks(orig, coords, caption = "click to add colonies, left-shift+click to de-select")
+    coords = add_or_remove_locs_with_clicks(np.vstack((orig,orig)), coords, caption = "click to add colonies, left-shift+click to de-select")
     coords = np.asarray(coords)
     x = [c[1] for c in coords]
     y = [c[0] for c in coords]
@@ -127,7 +127,7 @@ def main(argv):
         species_guess = gmm.predict(I)    
     
         # have user to click through the species labels and change them
-        species_guess = change_species(orig, x, y, species_guess, caption = "", window_width = 800)
+        species_guess = change_species(np.vstack((orig,orig)), x, y, species_guess, caption = "", window_width = 1200)
  
         # figure out which are the single-species blobs
         single_species_centers, single_species_blobs = determine_which_blobs_have_multi_species(rp, x, y, species_guess)    
