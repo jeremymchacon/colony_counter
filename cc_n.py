@@ -27,7 +27,7 @@ import math
 
 from count_colonies_functions import *
 
-argv = ["20170612_succ_SE_3.tif", "n","2"]
+argv = ["20170626_succ_1.tif", "n","2"]
 def main(argv):
 
     if len(argv) == 0:
@@ -79,6 +79,8 @@ def main(argv):
     result_for_thresh = round_mask(result, center, radius*.9)
     thresh = skimage.filters.threshold_otsu(result_for_thresh[result_for_thresh > 0])
     area_image = result > thresh    
+    area_image = skimage.morphology.remove_small_objects(area_image, 32)
+    # plt.imshow(area_image)
         
 
     # to find colony peaks, search for local peaks in a image made by multiplying
@@ -212,14 +214,12 @@ def main(argv):
     f, axarr = plt.subplots(1,2)
     axarr[0].axis("off")
     axarr[0].imshow(orig)
-    axarr[0].hold(True)
-    axarr[0].scatter(x, y, c = 1 + np.array(species), s = 16, marker = 'o')
+    axarr[0].scatter(x, y, c = 1 + np.array(species), s = 2, marker = '.')
     for i, txt in enumerate(colony):
         axarr[0].annotate(txt, (x[i]+9, y[i]-9), color = '#FFFFFF', size = 2)
     axarr[1].axis("off")
     axarr[1].imshow(colony_segmentation)
-    axarr[1].hold(True)
-    axarr[1].scatter(x, y, c = 1 + np.array(species), s = 4, marker = '.')
+    axarr[1].scatter(x, y, c = 1 + np.array(species), s = 1, marker = '.')
     for i, txt in enumerate(colony):
         axarr[1].annotate(txt, (x[i]+9, y[i]-9), color = '#FFFFFF', size = 2)
 
