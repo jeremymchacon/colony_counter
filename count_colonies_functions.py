@@ -223,7 +223,7 @@ def get_clicks(array, caption = "", window_width = 640):
                 #print("user clicked at {}".format(pos))
                 clicks.append(pos)
 
-def change_species(array, x, y, species, caption = "", window_width = 800):
+def change_species(array, x, y, species, caption = "", window_width = 1200):
     """
     takes an array e.g. image, shows as pygame display, plots the locs (list of
     xy tuples) on it with color defined by species.  if a user clicks near a loc,
@@ -296,7 +296,7 @@ def change_species(array, x, y, species, caption = "", window_width = 800):
                 pygame.display.flip()
 
                 
-def add_or_remove_locs_with_clicks(array, locs, caption = "", window_width = 800):
+def add_or_remove_locs_with_clicks(array, locs, caption = "", window_width = 1200):
     """
     takes an array e.g. image, shows as pygame display, plots the locs (list of
     xy tuples) on it, and adds locations to locs when clicked, which are
